@@ -128,7 +128,7 @@ export const project = () => {
   const m = p.id !== p.main ? /-t(\d+)$/.exec(p.id) : null
   return { id: p.id, name: p.name, local: p.local, parent: p.id !== p.main ? p.main : '', ticket: m ? Number(m[1]) : 0 }
 }
-export const showWorktree = async (id: string) => ide().showWorktree(id)
+export const showWorktree = (id: string) => ide().showWorktree(id)
 
 // The capabilities the Kanban uses, through the bridges of the IDE (or the core methods).
 const use = (name: string) => ide().use(name)

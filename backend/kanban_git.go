@@ -43,7 +43,7 @@ func (s *K) registerKanbanGit() {
 			if err != nil {
 				return nil, err
 			}
-			return s.withTimes(rt, root.ID)(f(ctx, c, gctx{loc: kanbanLoc(root), root: root, rt: rt, git: kb.Git{Run: runner{}, Root: root.Path}}, p))
+			return s.withTimes(rt, root.ID)(f(ctx, c, gctx{loc: kanbanLoc(root), root: root, rt: rt, git: kb.Git{Run: runner{}, Root: root.Path, Exists: exists()}}, p))
 		}
 	}
 	exists := func(k gctx, p string) bool { return k.exists(p) }

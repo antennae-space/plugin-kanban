@@ -179,7 +179,7 @@ func (s *K) finishChild(ctx context.Context, k gctx, t *kb.Ticket, status, comme
 func (s *K) clientGit(c *client, root *Project) gctx {
 	k := gctx{loc: kanbanLoc(root), root: root}
 	if rt, err := c.runtime(); err == nil {
-		k.rt, k.git = rt, kb.Git{Run: runner{}, Root: root.Path}
+		k.rt, k.git = rt, kb.Git{Run: runner{}, Root: root.Path, Exists: exists()}
 	}
 	return k
 }

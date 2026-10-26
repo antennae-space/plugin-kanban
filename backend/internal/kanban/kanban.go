@@ -118,8 +118,8 @@ func LocationOf(project, root string, local bool) Location {
 type Manager struct {
 	// data is the data folder of the plugin: the bases of the projects over SSH, kanban/.
 	data string
-	mu  sync.Mutex
-	dbs map[string]*sql.DB
+	mu   sync.Mutex
+	dbs  map[string]*sql.DB
 	// Now is replaced by the tests.
 	Now func() int64
 }

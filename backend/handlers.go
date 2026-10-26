@@ -172,7 +172,7 @@ func (s *K) registerKanban() {
 				if !statPath(wt) {
 					wt = ""
 				}
-				if err := s.removeWorktree(ctx, rt, k.loc, k.root, kb.Git{Run: runner{}, Root: k.root.Path}, t, wt); err != nil {
+				if err := s.removeWorktree(ctx, rt, k.loc, k.root, kb.Git{Run: runner{}, Root: k.root.Path, Exists: exists()}, t, wt); err != nil {
 					return nil, err
 				}
 			}

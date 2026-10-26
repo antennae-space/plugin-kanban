@@ -76,6 +76,18 @@ func statPath(p string) bool {
 	return err == nil
 }
 
+// exists is how the git of the kanban sees a file of the repository: on this machine the
+// backend reads it, over SSH it cannot (nil).
+func exists() func(string) bool {
+	if !srv.info.Project.Local {
+		return nil
+	}
+	return func(p string) bool {
+		_, err := os.Stat(p)
+		return err == nil
+	}
+}
+
 // putChild registers the worktree of a ticket as a project of the IDE (again if it was).
 func (s *K) putChild(owner int64, title, path string) (*Project, error) {
 	id, err := backend.RegisterWorktree(s.base, owner, title, path)

@@ -3,6 +3,7 @@ package kanban
 import (
 	"context"
 	"errors"
+	"os"
 	"path"
 	"strconv"
 	"strings"
@@ -27,6 +28,22 @@ type Runner interface {
 type Git struct {
 	Run  Runner
 	Root string // main folder of the project
+	// Exists tells whether a file of git is there (its state: a rebase, a squash), when the
+	// backend reads the repository (a project of this machine); nil over SSH.
+	Exists func(path string) bool
+}
+
+// gitPathExists tells whether a path of git (rebase-merge, SQUASH_MSG) exists in the
+// repository of dir: by the file when the backend reads it, else by what git says.
+func (g Git) gitPathExists(ctx context.Context, dir, name string) (bool, bool) {
+	if g.Exists == nil {
+		return false, false
+	}
+	out, err := g.git(ctx, dir, "rev-parse", "--path-format=absolute", "--git-path", name)
+	if err != nil {
+		return false, false
+	}
+	return g.Exists(strings.TrimSpace(out)), true
 }
 
 func (g Git) git(ctx context.Context, dir string, args ...string) (string, error) {
@@ -288,8 +305,13 @@ func (s State) Busy() bool { return s.Rebase || s.Merge || s.Squash }
 
 func (g Git) State(ctx context.Context, dir string) State {
 	st := State{Conflicts: []string{}}
-	// A rebase stopped has its REBASE_HEAD (the IDE runs no shell for the plugin).
-	if _, err := g.git(ctx, dir, "rev-parse", "-q", "--verify", "REBASE_HEAD"); err == nil {
+	// A rebase in progress: its folder (the IDE runs no shell for the plugin), else over SSH
+	// its REBASE_HEAD.
+	merge, known := g.gitPathExists(ctx, dir, "rebase-merge")
+	apply, _ := g.gitPathExists(ctx, dir, "rebase-apply")
+	if known {
+		st.Rebase = merge || apply
+	} else if _, err := g.git(ctx, dir, "rev-parse", "-q", "--verify", "REBASE_HEAD"); err == nil {
 		st.Rebase = true
 	}
 	if _, err := g.git(ctx, dir, "rev-parse", "-q", "--verify", "MERGE_HEAD"); err == nil {
@@ -302,10 +324,17 @@ func (g Git) State(ctx context.Context, dir string) State {
 			}
 		}
 	}
-	// A merge --squash stopped by a conflict: conflicts without MERGE_HEAD (its SQUASH_MSG is a
-	// file of .git, which the IDE reads for no plugin).
+	// A merge --squash stopped by a conflict: its SQUASH_MSG and changes in the index (over
+	// SSH, conflicts without MERGE_HEAD).
 	if !st.Merge && !st.Rebase {
-		st.Squash = len(st.Conflicts) > 0
+		if squash, known := g.gitPathExists(ctx, dir, "SQUASH_MSG"); known {
+			if squash {
+				_, staged := g.git(ctx, dir, "diff", "--cached", "--quiet")
+				st.Squash = len(st.Conflicts) > 0 || staged != nil
+			}
+		} else {
+			st.Squash = len(st.Conflicts) > 0
+		}
 	}
 	return st
 }
@@ -395,7 +424,12 @@ func (g Git) Abort(ctx context.Context, dir string) error {
 		if stash = strings.TrimSpace(stash); stash != "" {
 			_, _ = g.git(ctx, dir, "update-ref", "-d", "MERGE_AUTOSTASH")
 		}
-		_, err = g.git(ctx, dir, "reset", "--merge")
+		if _, err = g.git(ctx, dir, "reset", "--merge"); err == nil && g.Exists != nil {
+			// Its message goes with it (the file, the backend reads the repository).
+			if out, perr := g.git(ctx, dir, "rev-parse", "--path-format=absolute", "--git-path", "SQUASH_MSG"); perr == nil {
+				removeFile(strings.TrimSpace(out))
+			}
+		}
 		if stash != "" {
 			if _, aerr := g.git(ctx, dir, "stash", "apply", stash); aerr != nil {
 				_, _ = g.git(ctx, dir, "stash", "store", "-m", "web-ide: changes put aside by the merge", stash)
@@ -407,3 +441,6 @@ func (g Git) Abort(ctx context.Context, dir string) error {
 	}
 	return err
 }
+
+// removeFile removes a file of the repository (a SQUASH_MSG), quietly.
+var removeFile = func(path string) { _ = os.Remove(path) }

@@ -49,7 +49,7 @@ func (sc Scope) id(given int64) (int64, error) {
 
 // mcpGit opens the runtime of the main project for the git side of the tickets.
 func (s *K) mcpGit(sc Scope) (gctx, error) {
-	return gctx{loc: sc.Loc, root: sc.Root, rt: &Runtime{}, git: kb.Git{Run: runner{}, Root: sc.Root.Path}}, nil
+	return gctx{loc: sc.Loc, root: sc.Root, rt: &Runtime{}, git: kb.Git{Run: runner{}, Root: sc.Root.Path, Exists: exists()}}, nil
 }
 
 // TicketTool binds the arguments of a tool of the MCP on one ticket and announces the change.
