@@ -1,0 +1,599 @@
+{
+  "$schema": "https://raw.githubusercontent.com/antennae-space/plugin-sdk/v1.14.0/plugin.schema.json",
+  "id": "kanban",
+  "name": "Kanban",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "ide": ">=1.24.0 <2",
+  "assets": "https://github.com/antennae-space/plugin-kanban/releases/download/v{version}/kanban-{arch}.tar.gz",
+  "backend": "bin/kanban",
+  "provides": [
+    "tickets"
+  ],
+  "requires": [
+    "terminal",
+    "worktrees"
+  ],
+  "uses": [
+    "assistant",
+    "agents",
+    "commands"
+  ],
+  "permissions": [
+    "files:write",
+    "git",
+    "gh",
+    "worktrees",
+    "notify",
+    "use:terminal",
+    "use:assistant",
+    "use:agents",
+    "use:commands",
+    "core:commands.list",
+    "core:commands.save",
+    "core:agents.stats",
+    "core:git.branches",
+    "core:search.files",
+    "core:workspace.get"
+  ],
+  "contributes": {
+    "tools": [
+      {
+        "id": "kanban",
+        "label": "Kanban",
+        "icon": "kanban",
+        "zone": "left"
+      }
+    ],
+    "tabViews": [
+      {
+        "id": "board",
+        "label": "Kanban",
+        "alone": true
+      },
+      {
+        "id": "ticket",
+        "label": "Ticket"
+      },
+      {
+        "id": "milestone",
+        "label": "Milestone"
+      },
+      {
+        "id": "objective",
+        "label": "Objective"
+      }
+    ],
+    "modals": [
+      {
+        "id": "new-ticket",
+        "label": "New ticket"
+      }
+    ],
+    "links": [
+      {
+        "param": "ticket",
+        "view": "ticket",
+        "type": "number"
+      },
+      {
+        "param": "milestone",
+        "view": "milestone",
+        "type": "number"
+      },
+      {
+        "param": "objective",
+        "view": "objective",
+        "type": "number"
+      }
+    ],
+    "hooks": [
+      "project.open"
+    ],
+    "commands": [
+      {
+        "id": "open",
+        "label": "Open the kanban",
+        "category": "General"
+      }
+    ],
+    "mcpTools": [
+      "kanban_add_note",
+      "kanban_create",
+      "kanban_feedback",
+      "kanban_get",
+      "kanban_goal",
+      "kanban_list",
+      "kanban_milestone",
+      "kanban_move",
+      "kanban_objective",
+      "kanban_set_plan",
+      "kanban_start",
+      "kanban_update"
+    ],
+    "toolSchemas": {
+      "kanban_add_note": {
+        "description": "Adds a short note to a ticket (1000 characters max): a decision, a fact found, an answer of the user worth keeping. Not for progress logs, restatements of the ticket or corrections of earlier notes.",
+        "properties": {
+          "id": {
+            "description": "Ticket number (default: the ticket of the worktree you are in)",
+            "type": "integer"
+          },
+          "text": {
+            "description": "Note in Markdown, 1000 characters max",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "kanban_create": {
+        "description": "Creates a ticket in the backlog (status New). Use it when the user asks for it or agrees to note a task for later.",
+        "properties": {
+          "depends_on": {
+            "description": "Tickets of other lineages this one waits for: it starts once they are merged or done (replaces the list)",
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "description": {
+            "description": "Description in Markdown, 1500 characters max: context, need, acceptance criteria",
+            "type": "string"
+          },
+          "files": {
+            "description": "Paths of the files concerned (relative to the root of the project)",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "milestone": {
+            "description": "Milestone of the ticket and of its steps (0 takes it out; a step has the one of its root); see kanban_milestone",
+            "type": "integer"
+          },
+          "objective": {
+            "description": "Objective of the ticket and of its steps, apart from its milestone (0 takes it out; a step has the one of its root); see kanban_objective",
+            "type": "integer"
+          },
+          "parent": {
+            "description": "Root ticket: this one becomes a step of its lineage, developed in the root's worktree after the previous steps (0 takes it out). Only before its development starts",
+            "type": "integer"
+          },
+          "priority": {
+            "description": "Priority",
+            "enum": [
+              "low",
+              "normal",
+              "high",
+              "critical"
+            ],
+            "type": "string"
+          },
+          "title": {
+            "description": "Short title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
+      "kanban_feedback": {
+        "description": "Test feedback of a ticket: add one (a bug, a missing feature or an info found while testing), mark one handled (done) once fixed and verified, or open again (reopen).",
+        "properties": {
+          "action": {
+            "description": "What to do",
+            "enum": [
+              "add",
+              "done",
+              "reopen"
+            ],
+            "type": "string"
+          },
+          "complexity": {
+            "description": "How hard the fix is (add): low, medium or high; it picks the model of the fix session",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "type": "string"
+          },
+          "feedback": {
+            "description": "Feedback id (done, reopen), see kanban_get",
+            "type": "integer"
+          },
+          "id": {
+            "description": "Ticket number (default: the ticket of the worktree you are in)",
+            "type": "integer"
+          },
+          "kind": {
+            "description": "Kind (add)",
+            "enum": [
+              "info",
+              "bug",
+              "feature"
+            ],
+            "type": "string"
+          },
+          "text": {
+            "description": "What was noticed (add, 1000 characters max)",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ]
+      },
+      "kanban_get": {
+        "description": "Reads a whole ticket: description, notes, plan, goals and test feedback (with their ids), linked files, conversations, branch and worktree.",
+        "properties": {
+          "id": {
+            "description": "Ticket number (default: the ticket of the worktree you are in)",
+            "type": "integer"
+          }
+        },
+        "required": null
+      },
+      "kanban_goal": {
+        "description": "Checks, unchecks, adds, edits or deletes a goal of a ticket. Check each goal as soon as it is reached and verified.",
+        "properties": {
+          "action": {
+            "description": "What to do",
+            "enum": [
+              "check",
+              "uncheck",
+              "add",
+              "edit",
+              "delete"
+            ],
+            "type": "string"
+          },
+          "description": {
+            "description": "How to check it (add, edit; optional)",
+            "type": "string"
+          },
+          "goal": {
+            "description": "Goal id (check, uncheck, edit, delete), see kanban_get",
+            "type": "integer"
+          },
+          "id": {
+            "description": "Ticket number (default: the ticket of the worktree you are in)",
+            "type": "integer"
+          },
+          "title": {
+            "description": "Title of the goal (add, edit)",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ]
+      },
+      "kanban_list": {
+        "description": "Lists the tickets of the kanban of the project (number, status, priority, title, goals, open feedback).",
+        "properties": {
+          "query": {
+            "description": "Filter on the title (optional)",
+            "type": "string"
+          },
+          "status": {
+            "description": "Status filter (optional; review is the old name of to_test)",
+            "enum": [
+              "new",
+              "todo",
+              "in_progress",
+              "to_test",
+              "done",
+              "abandoned",
+              "review"
+            ],
+            "type": "string"
+          }
+        },
+        "required": null
+      },
+      "kanban_milestone": {
+        "description": "Milestones group the tickets of one feature (across lineages) with its spec, user stories and feedback; the user validates them. Actions: list; get (id); create (title, description, spec); update (id; title, description, spec, objective); story_add (id, text: \"As a <user>, I <can do>…\"), story_edit (id, story, text), story_delete (id, story); feedback_add (id, kind, text, complexity), feedback_done / feedback_reopen (id, feedback); note (id, text: a decision). Only the user validates a story or a milestone. Put a ticket in a milestone with the milestone field of kanban_create / kanban_update.",
+        "properties": {
+          "action": {
+            "description": "What to do",
+            "enum": [
+              "list",
+              "get",
+              "create",
+              "update",
+              "story_add",
+              "story_edit",
+              "story_delete",
+              "feedback_add",
+              "feedback_done",
+              "feedback_reopen",
+              "note"
+            ],
+            "type": "string"
+          },
+          "complexity": {
+            "description": "How hard handling the feedback is (feedback_add)",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "type": "string"
+          },
+          "description": {
+            "description": "Description in Markdown, 1500 characters max: the feature, its scope (create, update)",
+            "type": "string"
+          },
+          "feedback": {
+            "description": "Feedback id (feedback_done, feedback_reopen)",
+            "type": "integer"
+          },
+          "id": {
+            "description": "Milestone number (all actions but list and create)",
+            "type": "integer"
+          },
+          "kind": {
+            "description": "Kind of feedback (feedback_add)",
+            "enum": [
+              "bug",
+              "feature",
+              "info"
+            ],
+            "type": "string"
+          },
+          "objective": {
+            "description": "Default objective of the milestone; its open tickets go into it (update; 0: none); see kanban_objective",
+            "type": "integer"
+          },
+          "spec": {
+            "description": "The spec: a path of the repository or an address (create, update)",
+            "type": "string"
+          },
+          "story": {
+            "description": "User story id (story_edit, story_delete)",
+            "type": "integer"
+          },
+          "text": {
+            "description": "User story (500 characters max), feedback or note (1000 characters max)",
+            "type": "string"
+          },
+          "title": {
+            "description": "Title (create, update)",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ]
+      },
+      "kanban_move": {
+        "description": "Moves a ticket from In progress to To test (status to_test), with test_summary: how to test it. Other changes of status belong to the user.",
+        "properties": {
+          "comment": {
+            "description": "Comment for the history (optional)",
+            "type": "string"
+          },
+          "id": {
+            "description": "Ticket number (default: the ticket of the worktree you are in)",
+            "type": "integer"
+          },
+          "status": {
+            "description": "New status (review is the old name of to_test)",
+            "enum": [
+              "to_test",
+              "review"
+            ],
+            "type": "string"
+          },
+          "test_summary": {
+            "description": "What to test and how (steps, commands, expected results), in Markdown",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "test_summary"
+        ]
+      },
+      "kanban_objective": {
+        "description": "Objectives are named deadlines (MVP, a launch…) in order: a milestone says what (one feature), an objective says when, taking tickets of several milestones and lone ones. A ticket has one objective at most, apart from its milestone. Actions: list (in order); get (id: its tickets grouped by milestone); create (title, description, due); update (id; title, description, due); note (id, text: a decision). Only the user reaches, abandons or reorders an objective. Put a ticket in an objective with the objective field of kanban_create / kanban_update, a milestone's open tickets with the objective field of kanban_milestone update.",
+        "properties": {
+          "action": {
+            "description": "What to do",
+            "enum": [
+              "list",
+              "get",
+              "create",
+              "update",
+              "note"
+            ],
+            "type": "string"
+          },
+          "description": {
+            "description": "Description in Markdown, 1500 characters max: what reaching it means (create, update)",
+            "type": "string"
+          },
+          "due": {
+            "description": "Date aimed at, YYYY-MM-DD; empty: none (create, update)",
+            "type": "string"
+          },
+          "id": {
+            "description": "Objective number (get, update, note)",
+            "type": "integer"
+          },
+          "text": {
+            "description": "Note, 1000 characters max (note)",
+            "type": "string"
+          },
+          "title": {
+            "description": "Title (create, update)",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ]
+      },
+      "kanban_set_plan": {
+        "description": "Writes the implementation plan of a ticket and its goals (verifiable objectives, checked during development). Replaces the plan and the goals of a previous plan (the goals of the user stay). A New ticket moves to \"To do\".",
+        "properties": {
+          "complexity": {
+            "description": "How hard the work is, which picks the model and the effort of its sessions: low (a small obvious change: a color, a label, a one-line fix), medium (usual work), high (a delicate design, concurrency, security, a bug hard to find)",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "type": "string"
+          },
+          "goals": {
+            "description": "Goals, each one verifiable",
+            "items": {
+              "properties": {
+                "description": {
+                  "description": "How to check it (optional, a few lines)",
+                  "type": "string"
+                },
+                "title": {
+                  "description": "Short title, one sentence",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "id": {
+            "description": "Ticket number (default: the ticket of the worktree you are in)",
+            "type": "integer"
+          },
+          "plan": {
+            "description": "Plan in Markdown: approach, files, steps, risks, tests",
+            "type": "string"
+          },
+          "size": {
+            "description": "Estimated effort of the whole ticket: s (a few files, an hour of AI work), m, l, xl (many files across the pod and the page, several days)",
+            "enum": [
+              "s",
+              "m",
+              "l",
+              "xl"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "plan",
+          "goals",
+          "size",
+          "complexity"
+        ]
+      },
+      "kanban_start": {
+        "description": "Starts the development of a ticket (\"To do\", or \"In progress\" / \"To test\" without a worktree): creates the branch ticket/<n>-<slug> from the base in a worktree of the project, runs the setup commands of the project there (its saved commands flagged setup), and moves the ticket to \"In progress\". Answers the worktree: work there, with absolute paths, and commit on that branch.",
+        "properties": {
+          "base": {
+            "description": "Base branch (optional: the base of the ticket or of the kanban, else origin/main or main)",
+            "type": "string"
+          },
+          "id": {
+            "description": "Ticket number (default: the ticket of the worktree you are in)",
+            "type": "integer"
+          }
+        },
+        "required": null
+      },
+      "kanban_update": {
+        "description": "Changes a ticket (only the given fields).",
+        "properties": {
+          "add_files": {
+            "description": "Files to link",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "complexity": {
+            "description": "How hard the work is, which picks the model and the effort of its sessions: low (a small obvious change: a color, a label, a one-line fix), medium (usual work), high (a delicate design, concurrency, security, a bug hard to find)",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "type": "string"
+          },
+          "depends_on": {
+            "description": "Tickets of other lineages this one waits for: it starts once they are merged or done (replaces the list)",
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "description": {
+            "description": "New full description (Markdown, 1500 characters max)",
+            "type": "string"
+          },
+          "id": {
+            "description": "Ticket number (default: the ticket of the worktree you are in)",
+            "type": "integer"
+          },
+          "milestone": {
+            "description": "Milestone of the ticket and of its steps (0 takes it out; a step has the one of its root); see kanban_milestone",
+            "type": "integer"
+          },
+          "objective": {
+            "description": "Objective of the ticket and of its steps, apart from its milestone (0 takes it out; a step has the one of its root); see kanban_objective",
+            "type": "integer"
+          },
+          "parent": {
+            "description": "Root ticket: this one becomes a step of its lineage, developed in the root's worktree after the previous steps (0 takes it out). Only before its development starts",
+            "type": "integer"
+          },
+          "priority": {
+            "description": "Priority",
+            "enum": [
+              "low",
+              "normal",
+              "high",
+              "critical"
+            ],
+            "type": "string"
+          },
+          "remove_files": {
+            "description": "Files to unlink",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "size": {
+            "description": "Estimated effort of the whole ticket: s (a few files, an hour of AI work), m, l, xl (many files across the pod and the page, several days)",
+            "enum": [
+              "s",
+              "m",
+              "l",
+              "xl"
+            ],
+            "type": "string"
+          },
+          "test_summary": {
+            "description": "How to test the ticket (Markdown): steps, commands, expected results",
+            "type": "string"
+          },
+          "title": {
+            "description": "New title",
+            "type": "string"
+          }
+        },
+        "required": null
+      }
+    }
+  }
+}
