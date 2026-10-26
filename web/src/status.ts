@@ -1,7 +1,7 @@
 // The items of the status bar for a ticket view in focus: its status, priority and size, each
 // changed through its menu (the priority and the size only before the development, as in the view).
-import type { TabState } from '@ide/api'
-import type { StatusItem } from '@ide/types'
+import type { TabState } from './ide'
+import type { StatusItem } from './ide'
 import { moveTo } from './actions'
 import { ensureBoard, getTicket, priorityLabels, sizeNames, statusLabels, statusOrder, summary, updateTicket, type Priority, type Size, type Status } from './state'
 import { errorToast, t } from './plugin'

@@ -13,8 +13,8 @@ import { blockerText } from './Lineage'
 import { Count, EditableMarkdown, EditableText, Section, tooLong } from './TicketView'
 import { MAX_DESCRIPTION, MAX_NOTE } from './state'
 import './kanban.css'
-import { api, contextMenu, errorToast, fmtDate, Icon, Markdown, prompt, t } from './plugin'
-import type { TabState } from '@ide/api'
+import { ask, api, contextMenu, errorToast, fmtDate, Icon, Markdown, prompt, t } from './plugin'
+import type { TabState } from './ide'
 
 export type OApply = (p: Promise<Objective>) => Promise<void>
 
@@ -65,7 +65,7 @@ function ObjectiveBody(props: { o: Objective; apply: OApply; tabId: string }) {
   const events = () => o().notes.filter((n) => n.kind === 'event')
   const blocker = () => reachBlocker(o())
   const remove = async () => {
-    if (!confirm(t('Delete the objective “{title}”? Its tickets and milestones stay.', { title: o().title }))) return
+    if (!(await ask(t('Delete the objective “{title}”? Its tickets and milestones stay.', { title: o().title })))) return
     try {
       await deleteObjective(o().id)
       api.panes.closeTab(props.tabId)

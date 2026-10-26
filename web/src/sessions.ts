@@ -4,7 +4,7 @@ import { feedbackOp, inWorktreeOf, moveTicket, roleLabels, startWork, worktreePr
 import { devAgent, startAgentSession } from './agentSession'
 import type { Effort } from './route'
 import { linkMilestoneChat, type Milestone } from './milestones'
-import { api, capability, errorToast, project, showWorktree, t, toast } from './plugin'
+import { ask, api, capability, errorToast, project, showWorktree, t, toast } from './plugin'
 
 const firstMessage: Record<ChatRole, (tk: Ticket, f?: Feedback) => string> = {
   briefing: (k) => t("Let's do the briefing of ticket #{id} “{title}”: help me clarify it.", { id: k.id, title: k.title }),
@@ -96,7 +96,7 @@ export async function startDevelopment(tk: Ticket, force = false): Promise<boole
     target = (await startWork(tk.id, '', force)).project
   } catch (e) {
     const msg = (e as Error).message
-    if ((e as { code?: string }).code === 'not_git' && confirm(t('{error}.\n\nDevelop in the project folder, without branch or worktree?', { error: msg }))) {
+    if ((e as { code?: string }).code === 'not_git' && (await ask(t('{error}.\n\nDevelop in the project folder, without branch or worktree?', { error: msg })))) {
       if (tk.status === 'todo') await moveTicket(tk.id, 'in_progress', 'user', '', force).catch(() => {})
       return true
     }

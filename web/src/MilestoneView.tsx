@@ -14,8 +14,8 @@ import { openTicketChat, startMilestoneBriefing } from './sessions'
 import { ActionBtn, ComplexitySelect, Count, EditableMarkdown, EditableText, Section, tooLong } from './TicketView'
 import { MAX_DESCRIPTION, MAX_NOTE } from './state'
 import './kanban.css'
-import { api, contextMenu, errorToast, fmtDate, Icon, Markdown, openFile, prompt, root, t } from './plugin'
-import type { TabState } from '@ide/api'
+import { ask, api, contextMenu, errorToast, fmtDate, Icon, Markdown, openFile, prompt, root, t } from './plugin'
+import type { TabState } from './ide'
 
 export type MApply = (p: Promise<Milestone>) => Promise<void>
 
@@ -62,7 +62,7 @@ function MilestoneBody(props: { ms: Milestone; apply: MApply; tabId: string }) {
   const events = () => ms().notes.filter((n) => n.kind === 'event')
   const blocker = () => validateBlocker(ms())
   const remove = async () => {
-    if (!confirm(t('Delete the milestone “{title}”? Its tickets stay.', { title: ms().title }))) return
+    if (!(await ask(t('Delete the milestone “{title}”? Its tickets stay.', { title: ms().title })))) return
     try {
       await deleteMilestone(ms().id)
       api.panes.closeTab(props.tabId)
@@ -191,7 +191,7 @@ function Spec(props: { ms: Milestone; apply: MApply }) {
   }
   const open = () => {
     const s = props.ms.spec
-    if (/^https?:\/\//.test(s)) window.open(s, '_blank', 'noopener')
+    if (/^https?:\/\//.test(s)) globalThis.ide.openLink(s)
     else openFile(s.startsWith('/') ? s : `${root()}/${s}`)
   }
   return (

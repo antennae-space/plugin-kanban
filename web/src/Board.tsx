@@ -346,8 +346,9 @@ export function NewTicket(props: { onClose: () => void }) {
     setBusy(true)
     try {
       const tk = await createTicket({ title: title(), priority: priority(), description: description() })
-      props.onClose()
+      // Opened before the modal goes: its frame goes with it.
       openTicket(tk.id)
+      props.onClose()
     } catch (err) {
       errorToast(err)
     } finally {
@@ -372,7 +373,7 @@ export function NewTicket(props: { onClose: () => void }) {
       <form class="form" onSubmit={submit}>
         <label class="field">
           <span>{t('Title')}</span>
-          <input autofocus value={title()} onInput={(e) => setTitle(e.currentTarget.value)} data-testid="kanban-title" />
+          <input ref={(el) => setTimeout(() => el.focus())} value={title()} onInput={(e) => setTitle(e.currentTarget.value)} data-testid="kanban-title" />
         </label>
         <label class="field">
           <span>{t('Priority')}</span>

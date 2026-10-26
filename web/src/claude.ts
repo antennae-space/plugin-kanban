@@ -23,7 +23,7 @@ export function runClaude(tk: Ticket, role: Role, feedback?: number, model?: Cla
 /** The command adding the MCP endpoint of this pod to Claude Code (the token stays on disk). */
 export async function mcpAddCommand(): Promise<string> {
   const ws = await request<{ dataDir: string }>('workspace.get')
-  return `claude mcp add --transport http --scope user web-ide ${location.origin}/mcp --header "Authorization: Bearer $(cat ${ws.dataDir}/token)"`
+  return `claude mcp add --transport http --scope user web-ide ${globalThis.ide.project?.origin ?? ""}/mcp --header "Authorization: Bearer $(cat ${ws.dataDir}/token)"`
 }
 
 /** Runs Claude Code on a milestone in a terminal of the project: the review of the e2e

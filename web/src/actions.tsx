@@ -11,7 +11,7 @@ import { blockerText } from './Lineage'
 import { runClaude } from './claude'
 import { hardest, tierOf, type Tier } from './route'
 import { Section, type Apply } from './TicketView'
-import { capability, errorToast, Icon, openFile, pick, project, prompt, root, showWorktree, t, tn } from './plugin'
+import { ask, capability, errorToast, Icon, openFile, pick, project, prompt, root, showWorktree, t, tn } from './plugin'
 
 export interface ActionButton {
   label: string
@@ -125,8 +125,8 @@ export function ticketActions(tk: Ticket, ctx: Ctx): ActionButton[] {
               {
                 label: t('Start anyway…'),
                 more: true,
-                run: () => {
-                  if (confirm(t('Ticket #{id} waits for {blockers}. Start it anyway?', { id: tk.id, blockers: blocked }))) void startDevelopment(tk, true)
+                run: async () => {
+                  if (await ask(t('Ticket #{id} waits for {blockers}. Start it anyway?', { id: tk.id, blockers: blocked }))) void startDevelopment(tk, true)
                 },
               },
             ]
@@ -194,19 +194,19 @@ export function ticketActions(tk: Ticket, ctx: Ctx): ActionButton[] {
 async function closeTicket(tk: Ticket, apply: Apply) {
   if (tk.worktree) {
     const d = await ticketDiff(tk.id).catch(() => null)
-    if (d?.dirty && !confirm(t('The worktree has uncommitted changes: they will be lost with it. Close anyway?'))) return
+    if (d?.dirty && !(await ask(t('The worktree has uncommitted changes: they will be lost with it. Close anyway?')))) return
   }
   await apply(finishTicket(tk.id, 'done'))
 }
 
 export async function abandonTicket(tk: Ticket, apply: Apply) {
   const open = (tk.children ?? []).filter((c) => c.status !== 'done' && c.status !== 'abandoned')
-  if (open.length && !confirm(t('Its steps {ids} are abandoned with it. Continue?', { ids: open.map((c) => `#${c.id}`).join(', ') }))) return
-  if (tk.parent && tk.branch && !confirm(t('Its commits stay on the branch of the lineage (#{id}): revert them there if needed. Continue?', { id: tk.parent }))) return
+  if (open.length && !(await ask(t('Its steps {ids} are abandoned with it. Continue?', { ids: open.map((c) => `#${c.id}`).join(', ') })))) return
+  if (tk.parent && tk.branch && !(await ask(t('Its commits stay on the branch of the lineage (#{id}): revert them there if needed. Continue?', { id: tk.parent })))) return
   const why = await prompt({ title: t('Abandon ticket #{id}', { id: tk.id }), label: t('Reason (optional)') })
   if (why === null) return
   // The branch of a lineage belongs to its root.
-  const deleteBranch = !tk.parent && !!tk.branch && confirm(t('Also delete the branch {branch}?', { branch: tk.branch }))
+  const deleteBranch = !tk.parent && !!tk.branch && (await ask(t('Also delete the branch {branch}?', { branch: tk.branch })))
   await apply(finishTicket(tk.id, 'abandoned', why, deleteBranch, open.length > 0))
 }
 
@@ -228,7 +228,7 @@ export async function moveTo(tk: Ticket, to: Status, apply: Apply) {
   if (to !== 'done') return apply(moveTicket(tk.id, to, 'user', why))
   if (tk.worktree) {
     const d = await ticketDiff(tk.id).catch(() => null)
-    if (d?.dirty && !confirm(t('The worktree has uncommitted changes: they will be lost with it. Close anyway?'))) return
+    if (d?.dirty && !(await ask(t('The worktree has uncommitted changes: they will be lost with it. Close anyway?')))) return
   }
   await apply(finishTicket(tk.id, 'done', why))
 }
@@ -494,7 +494,7 @@ function GitOps(props: { tk: Ticket; tick: number; behind: number; onDone: () =>
   }
   const merge = async () => {
     const d = await ticketDiff(tk().id).catch(() => null)
-    if (d?.dirty && !confirm(t('The worktree has uncommitted changes: they will not be merged. Continue?'))) return
+    if (d?.dirty && !(await ask(t('The worktree has uncommitted changes: they will not be merged. Continue?')))) return
     await run('merge', () => mergeTicket(tk().id, squash()))
   }
   const busyState = (s?: GitOpState) => !!s && (s.rebase || s.merge || s.squash)

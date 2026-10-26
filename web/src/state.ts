@@ -390,25 +390,24 @@ export function childProject(ticket: number) {
 // ---------- tabs ----------
 
 export type BoardView = 'board' | 'roadmap' | 'milestones'
-const VIEW_KEY = 'webide.kanban.view'
-function savedView(): BoardView {
-  try {
-    const v = localStorage.getItem(VIEW_KEY)
-    return v === 'roadmap' || v === 'milestones' ? v : 'board'
-  } catch {
-    return 'board'
-  }
-}
 
-/** The view of the board, shared by its tabs and remembered by the browser. */
-export const [boardView, setBoardViewSignal] = createSignal<BoardView>(savedView())
+/**
+ * The view of the board, shared by its tabs and the panel: the frames of the Kanban each follow
+ * the one its background frame keeps (the value boardView of its tickets service).
+ */
+export const [boardView, setBoardViewSignal] = createSignal<BoardView>('board')
+let followed = false
+export function followBoardView() {
+  if (followed) return
+  followed = true
+  const svc = globalThis.ide.use('tickets')
+  const v = svc.value<BoardView>('boardView')
+  if (v) setBoardViewSignal(v)
+  svc.onValue('boardView', (x) => setBoardViewSignal((x as BoardView) || 'board'))
+}
 export function setBoardView(v: BoardView) {
   setBoardViewSignal(v)
-  try {
-    localStorage.setItem(VIEW_KEY, v)
-  } catch {
-    /* private mode: the choice lasts for this window */
-  }
+  void globalThis.ide.use('tickets').call('setBoardView', v).catch(() => {})
 }
 
 /** Opens the board, on a view when given. */
@@ -429,7 +428,9 @@ export function openObjective(id: number) {
   api.openView('objective', { key: String(id), state: { objective: id } })
 }
 
-export const [newTicketOpen, setNewTicketOpen] = createSignal(false)
+/** The New ticket form: a modal view of the Kanban, drawn by the IDE over its window. */
+export const newTicketOpen = () => false
+export const setNewTicketOpen = (open: boolean) => void (open && globalThis.ide.openModal('new-ticket', {}, { size: 'medium' }).catch(() => {}))
 
 /** A time of work, short: <1 s, 45 s, 12 min, 1 h 05. */
 export function workTime(ms: number): string {

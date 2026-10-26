@@ -1,0 +1,53 @@
+/* The base styles of the IDE the views of the Kanban use (buttons, fields, panels, texts),
+   taken from web/src/styles.css of the IDE: a frame has none of the page's. */
+/* What the theme of the IDE gives only on its own root. */
+:root {--radius: 5px; --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;}
+.kb-modal-view {padding: 14px 16px; display: flex; flex-direction: column; gap: 12px;}
+html, body {height: 100%; margin: 0;}
+html {touch-action: manipulation;}
+body {background: var(--bg); color: var(--fg); font: var(--font-size-ui)/1.4 var(--font-ui);}
+button, input, select, textarea {font: inherit; color: inherit;}
+code, .mono, kbd {font-family: var(--font-code);}
+kbd {font-size: max(12px, 0.85em); padding: 1px 5px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--bg-2); color: var(--fg-muted); white-space: nowrap;}
+a {color: var(--accent);}
+.grow {flex: 1;}
+.muted {color: var(--fg-muted);}
+.small {font-size: max(12px, 0.88em);}
+.danger {color: var(--danger);}
+.warn {color: var(--warn);}
+.ok {color: var(--ok);}
+.pad {padding: 10px 12px;}
+.nowrap {white-space: nowrap;}
+.ellipsis {overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;}
+.btn {display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-3); cursor: pointer; white-space: nowrap;}
+.btn:hover:not(:disabled) {background: var(--bg-hover);}
+.btn:disabled {opacity: 0.5; cursor: default;}
+.btn.primary {background: var(--accent); border-color: var(--accent); color: var(--accent-fg); font-weight: 600;}
+.btn.primary:hover:not(:disabled) {filter: brightness(1.1); background: var(--accent);}
+.btn.danger {color: var(--danger);}
+.btn.small {padding: 2px 8px; font-size: max(12px, 0.9em);}
+.icon-btn {display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 4px; border: 0; border-radius: 4px; background: transparent; color: var(--fg-muted); cursor: pointer;}
+.icon-btn:hover:not(:disabled) {background: var(--bg-hover); color: var(--fg);}
+.icon-btn:disabled {opacity: 0.5; cursor: default;}
+.icon-btn.small {height: 20px; min-width: 20px;}
+.link {border: 0; background: none; color: var(--accent); cursor: pointer; padding: 0 4px;}
+.link:hover {text-decoration: underline;}
+.input, input:not([type=checkbox]):not([type=radio]):not([type=color]), select, textarea {background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 5px 8px; min-width: 0;}
+input:focus, select:focus, textarea:focus {outline: none; border-color: var(--accent);}
+.input.small, select.small {padding: 2px 6px; font-size: max(12px, 0.9em);}
+.badge {display: inline-flex; align-items: center; gap: 4px; padding: 0 6px; border-radius: 9px; background: var(--bg-3); color: var(--fg-muted); font-size: 12px; font-weight: 600; line-height: 18px; border: 0;}
+.badge.ok {background: color-mix(in srgb, var(--ok) 20%, transparent); color: var(--ok);}
+.badge.warn {background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--warn); cursor: pointer;}
+.badge.danger {background: color-mix(in srgb, var(--danger) 22%, transparent); color: var(--danger);}
+.form {display: flex; flex-direction: column; gap: 12px;}
+.field {display: flex; flex-direction: column; gap: 4px; min-width: 0;}
+.field > span {font-size: max(12px, 0.88em); color: var(--fg-muted);}
+.field-row {display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;}
+.field-row > .grow {flex: 1 1 160px;}
+.form-actions {display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap;}
+.panel {display: flex; flex-direction: column; height: 100%; min-height: 0;}
+.panel-head {display: flex; align-items: center; gap: 2px; height: 32px; padding: 0 30px 0 10px; border-bottom: 1px solid var(--line); flex: none;}
+.panel-title {overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-muted);}
+.panel-body {flex: 1; overflow: auto; min-height: 0;}
+input, select, textarea {font-size: max(16px, var(--font-size-code));}
+.spinner {display: inline-block; width: 10px; height: 10px; border: 2px solid var(--fg-faint); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: -1px; flex: none;}

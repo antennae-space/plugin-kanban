@@ -17,17 +17,19 @@ function depState(tk: Ticket, id: number): 'wait' | 'abandoned' | 'ok' {
 
 /** Picks a ticket of the board (except the given ones). */
 async function pickTicket(placeholder: string, keep: (s: Summary) => boolean): Promise<number | null> {
-  return pick<number>({
-    placeholder,
-    provider: (q) =>
+  return (
+    (await pick<number>({
+      placeholder,
+      provider: (q: string) =>
       board.tickets
         .filter(keep)
         .map((s) => ({ s, score: q ? fuzzy(q, `#${s.id} ${s.title}`) : 1 }))
         .filter((x) => x.score > 0)
         .sort((a, b) => b.score - a.score || b.s.id - a.s.id)
-        .slice(0, 100)
+        .slice(0, 500)
         .map(({ s }) => ({ label: `#${s.id} ${s.title}`, detail: statusLabels[s.status], value: s.id })),
-  })
+    })) ?? null
+  )
 }
 
 export function blockerText(b: Blocker) {

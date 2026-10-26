@@ -3,7 +3,7 @@
 // how to test, feedback and pull request); lineage, linked files, attachments and history
 // aside, and the buttons that move it on (docs/design/kanban.md).
 import { createEffect, createMemo, createResource, createSignal, For, type JSX, on, Show } from 'solid-js'
-import { Dynamic } from 'solid-js/web'
+import { AgentStats } from './AgentStats'
 import {
   addAttachment, addNote, eventText, attachmentBlob, deleteAttachment, deleteNote, deleteTicket, ensureBoard, feedbackLabels, feedbackOp, getTicket, goalOp,
   moveTicket, priorityLabels, sizeNames, statusLabels, ticketVersion, updateTicket,
@@ -18,8 +18,8 @@ import { LineageSection } from './Lineage'
 import { MilestoneReminder, MilestoneSelect } from './MilestoneView'
 import { ObjectiveSelect } from './ObjectiveView'
 import './kanban.css'
-import { api, basename, capability, contextMenu, errorToast, fmtDate, fmtSize, fuzzy, Icon, Markdown, openFile, pick, relPath, request, root, t } from './plugin'
-import type { MenuItem, TabState } from '@ide/api'
+import { ask, api, basename, capability, contextMenu, errorToast, fmtDate, fmtSize, fuzzy, Icon, Markdown, Modal, openFile, pick, relPath, request, root, t, toast } from './plugin'
+import type { MenuItem, TabState } from './ide'
 
 export function TicketView(props: { tab: TabState; paneId: string }) {
   const id = (props.tab.state as { ticket: number }).ticket
@@ -47,6 +47,7 @@ export function TicketView(props: { tab: TabState; paneId: string }) {
       <Show when={!ticket().error} fallback={<p class="danger pad">{ticket().error}</p>}>
         <TicketBody tk={ticket() as Ticket} apply={apply} paneId={props.paneId} tabId={props.tab.id} />
       </Show>
+      <AttachmentModal />
     </Show>
   )
 }
@@ -66,7 +67,7 @@ function TicketBody(props: { tk: Ticket; apply: Apply; paneId: string; tabId: st
   }
 
   const remove = async () => {
-    if (!confirm(t('Delete ticket #{id} for good?', { id: tk().id }))) return
+    if (!(await ask(t('Delete ticket #{id} for good?', { id: tk().id })))) return
     try {
       await deleteTicket(tk().id)
       api.panes.closeTab(props.tabId)
@@ -193,7 +194,7 @@ function TicketBody(props: { tk: Ticket; apply: Apply; paneId: string; tabId: st
           <MilestoneSelect tk={tk()} apply={props.apply} />
           <ObjectiveSelect tk={tk()} apply={props.apply} />
           <span class="muted small">{t('created on {date}', { date: fmtDate(tk().created) })}</span>
-          <Show when={capability('agents')}>{(a) => <Dynamic component={a().TicketStats} ticket={tk().id} />}</Show>
+          <AgentStats ticket={tk().id} />
           <span class="grow" />
           <For each={buttons().filter((b) => !b.more)}>{(b) => <ActionBtn b={b} />}</For>
           <button
@@ -485,34 +486,51 @@ async function addFile(tk: Ticket, apply: Apply) {
   const p = await pick<string>({
     placeholder: t('File to link to the ticket'),
     pathDetail: true,
-    provider: async (q) => {
+    provider: async (q: string) => {
       const list = await files()
       return list
         .map((f) => ({ f, s: q ? fuzzy(q, basename(f)) * 2 + fuzzy(q, relPath(f)) : 1 }))
         .filter((x) => x.s > 0)
         .sort((a, b) => b.s - a.s)
-        .slice(0, 100)
+        .slice(0, 500)
         .map(({ f }) => ({ label: basename(f), detail: relPath(f), value: relPath(f) }))
     },
   })
   if (p) await apply(updateTicket(tk.id, { addFiles: [p] }))
 }
 
+// An attachment shown in a modal of the frame: an image, or a text (a frame opens no tab of the
+// browser and downloads nothing).
+const [shownAttachment, setShownAttachment] = createSignal<{ name: string; url?: string; text?: string } | null>(null)
+
 async function openAttachment(id: number, aid: number) {
   try {
     const { name, blob } = await attachmentBlob(id, aid)
-    const url = URL.createObjectURL(blob)
-    if (/^(image|video|audio|text)\/|pdf/.test(blob.type)) window.open(url, '_blank')
-    else {
-      const a = document.createElement('a')
-      a.href = url
-      a.download = name
-      a.click()
-    }
-    setTimeout(() => URL.revokeObjectURL(url), 60000)
+    if (blob.type.startsWith('image/')) setShownAttachment({ name, url: URL.createObjectURL(blob) })
+    else if (blob.type.startsWith('text/') || /json|xml|yaml/.test(blob.type)) setShownAttachment({ name, text: await blob.text() })
+    else toast(t('{name}: only images and texts open here', { name }), 'info')
   } catch (e) {
     errorToast(e)
   }
+}
+
+/** The attachment opened, over the ticket. */
+export function AttachmentModal() {
+  return (
+    <Show when={shownAttachment()}>
+      {(a) => (
+        <Modal
+          title={a().name}
+          onClose={() => {
+            if (a().url) URL.revokeObjectURL(a().url!)
+            setShownAttachment(null)
+          }}
+        >
+          {a().url ? <img src={a().url} alt={a().name} style={{ 'max-width': '100%' }} /> : <pre class="mono small">{a().text}</pre>}
+        </Modal>
+      )}
+    </Show>
+  )
 }
 
 // ---------- pieces ----------
