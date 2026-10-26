@@ -117,13 +117,16 @@ setInterval(() => {
   if (p?.id !== proj()?.id) setProj(p)
 }, 500)
 
-export const root = () => (proj() ?? ide()?.project)?.root ?? ''
+// The project now: the frame's, kept up to date by the IDE; the signal makes it reactive.
+const current = () => (proj(), ide()?.project ?? null)
+
+export const root = () => current()?.root ?? ''
 export const relPath = (p: string) => (p === root() ? '.' : p.startsWith(root() + '/') ? p.slice(root().length + 1) : p)
 export const basename = (p: string) => p.slice(p.replace(/\/+$/, '').lastIndexOf('/') + 1)
 
 /** The project of the window: its id, its parent (a worktree's main project), its ticket. */
 export const project = () => {
-  const p = proj() ?? ide()?.project
+  const p = current()
   if (!p) return undefined
   const m = p.id !== p.main ? /-t(\d+)$/.exec(p.id) : null
   return { id: p.id, name: p.name, local: p.local, parent: p.id !== p.main ? p.main : '', ticket: m ? Number(m[1]) : 0 }

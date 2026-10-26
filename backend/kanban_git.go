@@ -429,8 +429,6 @@ func (s *K) registerKanbanGit() {
 // removeWorktree removes the worktree of a ticket and the project opened on it.
 func (s *K) removeWorktree(ctx context.Context, rt *Runtime, loc kb.Location, root *Project, g kb.Git, t *kb.Ticket, wt string) error {
 	child := childID(root.ID, t.ID)
-	// Its project goes (its runtime closed, its desk dropped): the IDE does it.
-	_ = backend.UnregisterWorktree(s.base, t.ID)
 	// Its agent sessions end with it, even when no window had it open.
 	if ag := s.agents(rt); ag != nil {
 		ag.Purge(child)
@@ -441,6 +439,9 @@ func (s *K) removeWorktree(ctx context.Context, rt *Runtime, loc kb.Location, ro
 		}
 		_ = s.Kanban.Event(loc, t.ID, kb.ByUser, "Worktree removed", nil)
 	}
+	// Its project goes last (its runtime closed, its desk dropped): the IDE does it, and this
+	// backend may be the worktree's own.
+	_ = backend.UnregisterWorktree(s.base, t.ID)
 	if t.Worktree != "" {
 		empty := ""
 		return s.Kanban.SetGit(loc, t.ID, kb.GitState{Worktree: &empty})
