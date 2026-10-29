@@ -1,5 +1,6 @@
 // Side panel of the kanban: the open tickets of the project, grouped by status.
 import { For, onMount, Show } from 'solid-js'
+import { useToolMenu } from '@antennae-space/plugin-sdk/solid'
 import { Card } from './Board'
 import { board, ensureBoard, openBoard, refreshBoard, setNewTicketOpen, statusLabels, type Status } from './state'
 import './kanban.css'
@@ -10,15 +11,23 @@ const shown: Status[] = ['in_progress', 'to_test', 'todo', 'new']
 export function KanbanPanel() {
   onMount(ensureBoard)
   const of = (s: Status) => board.tickets.filter((t) => t.status === s)
+  // The ⋮ of its zone or tile; a frame has no corner group, its buttons stay in its head.
+  useToolMenu(
+    () => [
+      { id: 'new', label: t('New ticket') },
+      { id: 'refresh', label: t('Refresh') },
+    ],
+    (item) => (item === 'new' ? setNewTicketOpen(true) : refreshBoard()),
+  )
   return (
     <div class="panel" data-testid="kanban-panel">
       <div class="panel-head">
         <span class="panel-title">Kanban</span>
         <span class="grow" />
-        <button class="icon-btn" title={t('New ticket')} onClick={() => setNewTicketOpen(true)}>
+        <button class="icon-btn" data-testid="kanban-new-ticket" title={t('New ticket')} onClick={() => setNewTicketOpen(true)}>
           <Icon name="plus" size={14} />
         </button>
-        <button class="icon-btn" title={t('Refresh')} onClick={() => refreshBoard()}>
+        <button class="icon-btn" data-testid="kanban-refresh" title={t('Refresh')} onClick={() => refreshBoard()}>
           <Icon name="refresh" size={14} />
         </button>
       </div>
